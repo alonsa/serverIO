@@ -9,7 +9,7 @@ import java.sql.*;
  */
 public class DaoServiceImpl {
 
-    // TODO need to change it to service
+    // TODO need to change it to a service
 
     private final static String DB_NAME = "CHATS";
     private final static String TABLE_NAME = "CHAT";
