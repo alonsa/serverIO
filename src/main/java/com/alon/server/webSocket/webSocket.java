@@ -20,7 +20,7 @@ import java.util.concurrent.Future;
 /**
  * Created by alon_ss on 6/9/16.
  */
-@ServerEndpoint("/echo")
+@ServerEndpoint("/chat")
 public class webSocket {
 
 //    ws://localhost:8080/echo
