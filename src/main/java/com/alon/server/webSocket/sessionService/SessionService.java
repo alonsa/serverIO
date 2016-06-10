@@ -8,6 +8,7 @@ import java.util.Set;
  */
 public interface SessionService {
 
+    public boolean isExist(Session session);
     public void addSession(Session session, String userName);
     public String removeSession(Session session);
     public String getSessionName(Session session);

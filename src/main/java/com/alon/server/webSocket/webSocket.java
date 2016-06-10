@@ -1,8 +1,12 @@
 package com.alon.server.webSocket;
 
+import com.alon.server.entity.Message;
 import com.alon.server.service.DaoServiceImpl;
 import com.alon.server.webSocket.sessionService.SessionService;
 import com.alon.server.webSocket.sessionService.SessionServiceImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.JSONObject;
 
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
@@ -11,6 +15,7 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.util.concurrent.Future;
+
 
 /**
  * Created by alon_ss on 6/9/16.
@@ -41,24 +46,33 @@ public class webSocket {
      * and allow us to react to it. For now the message is read as a String.
      */
     @OnMessage
-    public void onMessage(String message, Session session){
-        System.out.println("Message from " + session.getId() + ": " + message);
-        SessionService sessionService = SessionServiceImpl.getInstance();
+    public void onMessage(String messageString, Session session){
 
-        String name = sessionService.getSessionName(session);
-        if (name == null){ // new user
-            sessionService.addSession(session, message + "_" + session.getId());
-            message = "Hi everybody";
+        ObjectMapper mapper = new ObjectMapper();
+        Message message = null;
+        try {
+            message = mapper.readValue(messageString, Message.class);
+            mapper.writeValueAsString(message);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        for (Session other: sessionService.getAllSessions()){
-            if (other.isOpen()){
-                String text = sessionService.getSessionName(session) + ": " + message;
-                sendMessageToSession(other, text);
+
+        if (message != null){
+            System.out.println("Message from " + session.getId() + ": " + message);
+            SessionService sessionService = SessionServiceImpl.getInstance();
+
+            if (!sessionService.isExist(session)){ // new user
+                sessionService.addSession(session, message.getUser());
             }
-        }
+            for (Session other: sessionService.getAllSessions()){
+                if (other.isOpen()){
+                    sendMessageToSession(other, messageString);
+                }
+            }
 
-        DaoServiceImpl dao = DaoServiceImpl.getInstance();
-        dao.saveData(session.getId(), message);
+            DaoServiceImpl dao = DaoServiceImpl.getInstance();
+            dao.saveData(session.getId(), messageString);
+        }
     }
 
     /**
@@ -67,16 +81,30 @@ public class webSocket {
     @OnClose
     public void onClose(Session session){
         SessionService sessionService = SessionServiceImpl.getInstance();
+        String leftSessionName = sessionService.getSessionName(session);
         sessionService.removeSession(session);
 
-        for (Session other: sessionService.getAllSessions()){
-            if (other.isOpen()){
-                String text = "Session " + sessionService.getSessionName(session) + " has ended";
-                sendMessageToSession(other, text);
-            }else {
-                sessionService.removeSession(other);
+        Message message = new Message(leftSessionName, "Good by");
+        String jsonMessage = null;
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            jsonMessage = mapper.writeValueAsString(message);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        if (jsonMessage != null){
+            for (Session other: sessionService.getAllSessions()){
+                if (other.isOpen()){
+                    sessionService.getSessionName(other);
+                    sendMessageToSession(other, jsonMessage);
+                }else {
+                    sessionService.removeSession(other);
+                }
             }
         }
+
+
         System.out.println("Session " +session.getId()+" has ended");
     }
 
