@@ -5,11 +5,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
  
-@Path("/hello")
+@Path("/hello") //	http://localhost:8080/hello/alon
 public class RestImpl {
 
-//	http://localhost:8080/rest/hello/alon
- 
 	@GET
 	@Path("/{param}")
 	public Response getMsg(@PathParam("param") String msg) {

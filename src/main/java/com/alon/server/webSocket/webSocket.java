@@ -20,10 +20,8 @@ import java.util.concurrent.Future;
 /**
  * Created by alon_ss on 6/9/16.
  */
-@ServerEndpoint("/chat")
+@ServerEndpoint("/chat") // ws://localhost:8080/chat
 public class webSocket {
-
-//    ws://localhost:8080/echo
 
     /**
      * @OnOpen allows us to intercept the creation of a new session.
