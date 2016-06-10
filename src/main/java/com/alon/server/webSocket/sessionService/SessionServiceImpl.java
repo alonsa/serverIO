@@ -1,0 +1,45 @@
+package com.alon.server.webSocket.sessionService;
+
+import javax.websocket.Session;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * Created by alon_ss on 6/10/16.
+ */
+
+public class SessionServiceImpl implements SessionService {
+
+    private static final SessionService instance = new SessionServiceImpl();
+
+    private SessionServiceImpl() {}
+
+    public static SessionService getInstance() {
+        return instance;
+    }
+
+    private Map<Session, String> sessionMap = new ConcurrentHashMap<Session, String>();
+    private AtomicInteger counter = new AtomicInteger(0);
+
+    @Override
+    public void addSession(Session session, String userName) {
+        sessionMap.put(session, userName);
+    }
+
+    @Override
+    public String removeSession(Session session) {
+        return sessionMap.remove(session);
+    }
+
+    @Override
+    public String getSessionName(Session session) {
+        return sessionMap.get(session);
+    }
+
+    @Override
+    public Set<Session> getAllSessions() {
+        return sessionMap.keySet();
+    }
+}
