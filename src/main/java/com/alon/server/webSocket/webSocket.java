@@ -23,6 +23,9 @@ import java.util.concurrent.Future;
 @ServerEndpoint("/chat") // ws://localhost:8080/chat
 public class webSocket {
 
+
+    SessionService sessionService = SessionServiceImpl.getInstance();
+
     /**
      * @OnOpen allows us to intercept the creation of a new session.
      * The session class allows us to send data to the user.
@@ -32,11 +35,6 @@ public class webSocket {
     @OnOpen
     public void onOpen(Session session){
         System.out.println(session.getId() + " has opened a connection");
-        try {
-            session.getBasicRemote().sendText("Connection Established \nWhat is your name?");
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
     }
 
     /**
@@ -57,7 +55,7 @@ public class webSocket {
 
         if (message != null){
             System.out.println("Message from " + session.getId() + ": " + message);
-            SessionService sessionService = SessionServiceImpl.getInstance();
+
 
             if (!sessionService.isExist(session)){ // new user
                 sessionService.addSession(session, message.getUser());
@@ -78,7 +76,6 @@ public class webSocket {
      */
     @OnClose
     public void onClose(Session session){
-        SessionService sessionService = SessionServiceImpl.getInstance();
         String leftSessionName = sessionService.getSessionName(session);
         sessionService.removeSession(session);
 
