@@ -1,4 +1,4 @@
-package com.alon.server.webSocket.sessionService;
+package com.alon.server.service;
 
 import javax.websocket.Session;
 import java.util.Set;

@@ -1,4 +1,4 @@
-package com.alon.server.webSocket.sessionService;
+package com.alon.server.service;
 
 import org.springframework.stereotype.Service;
 
@@ -14,14 +14,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class SessionServiceImpl implements SessionService {
-
-    private static final SessionService instance = new SessionServiceImpl();
-
-    private SessionServiceImpl() {}
-
-    public static SessionService getInstance() {
-        return instance;
-    }
 
     private Map<Session, String> sessionMap = new ConcurrentHashMap<Session, String>();
     private AtomicInteger counter = new AtomicInteger(0);

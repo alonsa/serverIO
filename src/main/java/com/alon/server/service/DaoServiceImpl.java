@@ -1,13 +1,19 @@
 package com.alon.server.service;
 
+import com.alon.server.entity.Message;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.sql.*;
 
 /**
  * Created by alon_ss on 6/10/16.
  */
-public class DaoServiceImpl {
+
+@Service
+public class DaoServiceImpl implements DaoService {
 
     // TODO need to change it to a service
 
@@ -24,25 +30,19 @@ public class DaoServiceImpl {
     private final static String DB_TABLE_URL = JDBC_PLAIN + "/" + DB_NAME + JDBC_PARAM;;
     private final static String DB_PASSWORD = "1234";
 
-    private static final DaoServiceImpl instance = init();
-
-    private static DaoServiceImpl init(){
+    @PostConstruct
+    private void init(){
         testDbConnection();
-        return new DaoServiceImpl();
-    }
-
-    public static DaoServiceImpl getInstance() {
-        return instance;
     }
 
     @Async
-    public void saveData(String sessionId, String msg){
+    public void saveData(String sessionId, Message msg){
         java.sql.Date startDate = new java.sql.Date(System.currentTimeMillis());
 
         Connection connection = connectToDb();
 
         // the mysql insert statement
-        String query = " insert into " + TABLE_NAME + " (id, msg, date_created) values (?, ?, ?)";
+        String query = " insert into " + TABLE_NAME + " (id, uname, msg, date_created) values (?, ?, ?, ?)";
 
         if (connection != null){
             try {
@@ -50,8 +50,9 @@ public class DaoServiceImpl {
                 PreparedStatement preparedStmt = null;
                 preparedStmt = connection.prepareStatement(query);
                 preparedStmt.setString (1, sessionId);
-                preparedStmt.setString (2, msg);
-                preparedStmt.setDate   (3, startDate);
+                preparedStmt.setString (2, msg.getUser());
+                preparedStmt.setString (3, msg.getText());
+                preparedStmt.setDate   (4, startDate);
 
                 preparedStmt.execute();
 
@@ -131,6 +132,7 @@ public class DaoServiceImpl {
             Statement stmt = connection.createStatement();
             String sql = "CREATE TABLE " + TABLE_NAME +
                     "(id VARCHAR(45) not NULL, " +
+                    " uname VARCHAR(45), " +
                     " msg VARCHAR(255), " +
                     " date_created VARCHAR(45))";
 

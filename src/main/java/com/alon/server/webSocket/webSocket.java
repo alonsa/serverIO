@@ -1,20 +1,21 @@
 package com.alon.server.webSocket;
 
 import com.alon.server.entity.Message;
-import com.alon.server.service.DaoServiceImpl;
-import com.alon.server.webSocket.sessionService.SessionService;
-import com.alon.server.webSocket.sessionService.SessionServiceImpl;
+import com.alon.server.service.DaoService;
+import com.alon.server.service.SessionService;
+import com.alon.server.service.SessionServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.json.JSONObject;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import javax.annotation.PostConstruct;
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
-import java.util.concurrent.Future;
 
 
 /**
@@ -23,8 +24,10 @@ import java.util.concurrent.Future;
 @ServerEndpoint("/chat") // ws://localhost:8080/chat
 public class webSocket {
 
+    private ApplicationContext context = new ClassPathXmlApplicationContext(new String[] {"Spring-AutoScan.xml"});
 
-    SessionService sessionService = SessionServiceImpl.getInstance();
+    private DaoService daoService = (DaoService)context.getBean("daoServiceImpl");
+    private SessionService sessionService = (SessionService)context.getBean("sessionServiceImpl");
 
     /**
      * @OnOpen allows us to intercept the creation of a new session.
@@ -66,8 +69,7 @@ public class webSocket {
                 }
             }
 
-            DaoServiceImpl dao = DaoServiceImpl.getInstance();
-            dao.saveData(session.getId(), messageString);
+            daoService.saveData(session.getId(), message);
         }
     }
 
