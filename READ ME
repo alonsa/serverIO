@@ -1,0 +1,9 @@
+1. Install tomcat
+2. Install mysql
+3. Set the user name and password in to the application.properties
+4. Upload the tomcat to eclipse
+5. Eclipse only - Go to "web project settings" and change the "Context root" to: "/"
+6. Upload the project to the eclipse tomcat
+8. Run tomcat
+9. Open the "web.html" in a browser
+10 Start chatting!!!
