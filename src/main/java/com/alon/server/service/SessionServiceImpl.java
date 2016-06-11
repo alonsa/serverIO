@@ -16,7 +16,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SessionServiceImpl implements SessionService {
 
     private Map<Session, String> sessionMap = new ConcurrentHashMap<Session, String>();
-    private AtomicInteger counter = new AtomicInteger(0);
+    private Map<String, AtomicInteger> namesMap = new ConcurrentHashMap<String, AtomicInteger>();
+
+    private static final SessionService instance = new SessionServiceImpl();
+
+    private SessionServiceImpl() {}
+
+    public static SessionService getInstance() {
+        return instance;
+    }
 
     @Override
     public boolean isExist(Session session) {
@@ -24,8 +32,11 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public void addSession(Session session, String userName) {
-        sessionMap.put(session, userName);
+    public String addSession(Session session, String userName) {
+        namesMap.putIfAbsent(userName, new AtomicInteger(0));
+        String  indxedUserName = userName + ":" + namesMap.get(userName).getAndAdd(1);
+        sessionMap.put(session, indxedUserName);
+        return indxedUserName;
     }
 
     @Override

@@ -27,7 +27,7 @@ public class webSocket {
     private ApplicationContext context = new ClassPathXmlApplicationContext(new String[] {"Spring-AutoScan.xml"});
 
     private DaoService daoService = (DaoService)context.getBean("daoServiceImpl");
-    private SessionService sessionService = (SessionService)context.getBean("sessionServiceImpl");
+    private SessionService sessionService = SessionServiceImpl.getInstance();
 
     /**
      * @OnOpen allows us to intercept the creation of a new session.
@@ -45,13 +45,12 @@ public class webSocket {
      * and allow us to react to it. For now the message is read as a String.
      */
     @OnMessage
-    public void onMessage(String messageString, Session session){
+    public void onMessage(String messageString, Session session) throws JsonProcessingException {
 
         ObjectMapper mapper = new ObjectMapper();
         Message message = null;
         try {
             message = mapper.readValue(messageString, Message.class);
-            mapper.writeValueAsString(message);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -59,10 +58,15 @@ public class webSocket {
         if (message != null){
             System.out.println("Message from " + session.getId() + ": " + message);
 
-
             if (!sessionService.isExist(session)){ // new user
-                sessionService.addSession(session, message.getUser());
+                String indexedName = sessionService.addSession(session, message.getUser());
+                message.setUser(indexedName);
+            }else {
+                message.setUser(sessionService.getSessionName(session));
             }
+
+            messageString = mapper.writeValueAsString(message);
+
             for (Session other: sessionService.getAllSessions()){
                 if (other.isOpen()){
                     sendMessageToSession(other, messageString);
