@@ -22,7 +22,7 @@ import java.io.IOException;
  * Created by alon_ss on 6/9/16.
  */
 @ServerEndpoint("/chat") // ws://localhost:8080/chat
-public class webSocket {
+public class WebSocket {
 
     private ApplicationContext context = new ClassPathXmlApplicationContext(new String[] {"Spring-AutoScan.xml"});
 
@@ -85,7 +85,7 @@ public class webSocket {
         String leftSessionName = sessionService.getSessionName(session);
         sessionService.removeSession(session);
 
-        Message message = new Message(leftSessionName, "Good by");
+        Message message = new Message(leftSessionName, "Goodbye");
         String jsonMessage = null;
         ObjectMapper mapper = new ObjectMapper();
         try {
@@ -97,9 +97,9 @@ public class webSocket {
         if (jsonMessage != null){
             for (Session other: sessionService.getAllSessions()){
                 if (other.isOpen()){
-                    sessionService.getSessionName(other);
                     sendMessageToSession(other, jsonMessage);
                 }else {
+                    // cleanup mechanism
                     sessionService.removeSession(other);
                 }
             }

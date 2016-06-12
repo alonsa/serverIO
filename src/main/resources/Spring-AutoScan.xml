@@ -11,7 +11,7 @@
 
     <!--<bean id="SessionService" class="com.alon.server.service.SessionServiceImpl"></bean>-->
 
-    <!--<bean id="webSocket2" class="com.alon.server.webSocket.webSocket">-->
+    <!--<bean id="webSocket2" class="com.alon.server.webSocket.WebSocket">-->
         <!--<property name="sessionService" ref="SessionService"/>-->
     <!--</bean>-->
 

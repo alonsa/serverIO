@@ -34,9 +34,9 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public String addSession(Session session, String userName) {
         namesMap.putIfAbsent(userName, new AtomicInteger(0));
-        String  indxedUserName = userName + ":" + namesMap.get(userName).getAndAdd(1);
-        sessionMap.put(session, indxedUserName);
-        return indxedUserName;
+        String  indexedUserName = userName + ":" + namesMap.get(userName).getAndAdd(1);
+        sessionMap.put(session, indexedUserName);
+        return indexedUserName;
     }
 
     @Override
