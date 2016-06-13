@@ -8,10 +8,11 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-
-
 import javax.annotation.PostConstruct;
 import java.sql.*;
+
+import static com.alon.server.consts.Consts.JDBC_DRIVER;
+import static com.alon.server.consts.Consts.JDBC_PARAM;
 
 /**
  * Created by alon_ss on 6/10/16.
@@ -35,11 +36,6 @@ public class DaoServiceImpl implements DaoService {
 
     @Value("${db.table.name}")
     private String TABLE_NAME;
-
-    private final static String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
-    private final static String SERVER_TIMEZONE = "&serverTimezone=UTC";
-    private final static String USE_SSL = "&useSSL=false";
-    private final static String JDBC_PARAM = "?autoReconnect=true" + USE_SSL + SERVER_TIMEZONE;
 
     private String dbUrl;
     private String dbTableUrl;

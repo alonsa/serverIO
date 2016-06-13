@@ -1,5 +1,7 @@
 package com.alon.server.service;
 
+import com.alon.server.entity.User;
+
 import javax.websocket.Session;
 import java.util.Set;
 
@@ -8,9 +10,10 @@ import java.util.Set;
  */
 public interface SessionService {
 
-    public boolean isExist(Session session);
-    public String addSession(Session session, String userName);
-    public String removeSession(Session session);
-    public String getSessionName(Session session);
-    public Set<Session> getAllSessions();
+    boolean isExist(Session session);
+    String addSession(Session session, User userName);
+    String updateSession(Session session, User user);
+    User removeSession(Session session);
+    User getSessionUser(Session session);
+    Set<Session> getAllSessions();
 }

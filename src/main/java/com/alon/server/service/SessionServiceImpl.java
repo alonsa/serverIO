@@ -1,5 +1,6 @@
 package com.alon.server.service;
 
+import com.alon.server.entity.User;
 import org.springframework.stereotype.Service;
 
 import javax.websocket.Session;
@@ -15,8 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class SessionServiceImpl implements SessionService {
 
-    private Map<Session, String> sessionMap = new ConcurrentHashMap<Session, String>();
-    private Map<String, AtomicInteger> namesMap = new ConcurrentHashMap<String, AtomicInteger>();
+    private Map<Session, User> sessionMap = new ConcurrentHashMap<>();
+    private Map<String, AtomicInteger> namesMap = new ConcurrentHashMap<>();
 
     private static final SessionService instance = new SessionServiceImpl();
 
@@ -32,20 +33,34 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public String addSession(Session session, String userName) {
+    public String addSession(Session session, User user) {
+        String userName = user.getUser();
         namesMap.putIfAbsent(userName, new AtomicInteger(0));
         String  indexedUserName = userName + ":" + namesMap.get(userName).getAndAdd(1);
-        sessionMap.put(session, indexedUserName);
+        user.setUser(indexedUserName);
+        sessionMap.put(session, user);
         return indexedUserName;
     }
 
     @Override
-    public String removeSession(Session session) {
+    public String updateSession(Session session, User user) {
+        String userName = user.getUser();
+        if (sessionMap.containsKey(session)){
+            sessionMap.put(session, user);
+        }else {
+            userName = addSession(session, user);
+        }
+
+        return userName;
+    }
+
+    @Override
+    public User removeSession(Session session) {
         return sessionMap.remove(session);
     }
 
     @Override
-    public String getSessionName(Session session) {
+    public User getSessionUser(Session session) {
         return sessionMap.get(session);
     }
 

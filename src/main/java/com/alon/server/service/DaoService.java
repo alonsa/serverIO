@@ -7,5 +7,5 @@ import com.alon.server.entity.Message;
  */
 public interface DaoService {
 
-    public void saveData(String sessionId, Message msg);
+    void saveData(String sessionId, Message msg);
 }
