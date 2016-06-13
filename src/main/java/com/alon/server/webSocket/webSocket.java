@@ -1,6 +1,7 @@
 package com.alon.server.webSocket;
 
 import com.alon.server.entity.Message;
+import com.alon.server.entity.User;
 import com.alon.server.service.DaoService;
 import com.alon.server.service.SessionService;
 import com.alon.server.service.SessionServiceImpl;
@@ -9,13 +10,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import javax.annotation.PostConstruct;
 import javax.websocket.OnClose;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
+
+import static com.alon.server.consts.Consts.GOODBYE;
+import static com.alon.server.consts.Consts.LOBBY;
 
 
 /**
@@ -28,6 +31,8 @@ public class WebSocket {
 
     private DaoService daoService = (DaoService)context.getBean("daoServiceImpl");
     private SessionService sessionService = SessionServiceImpl.getInstance();
+
+    private ObjectMapper mapper = new ObjectMapper();
 
     /**
      * @OnOpen allows us to intercept the creation of a new session.
@@ -47,34 +52,32 @@ public class WebSocket {
     @OnMessage
     public void onMessage(String messageString, Session session) throws JsonProcessingException {
 
-        ObjectMapper mapper = new ObjectMapper();
-        Message message = null;
-        try {
-            message = mapper.readValue(messageString, Message.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Message message = getMessageFronJson(messageString);
 
         if (message != null){
             System.out.println("Message from " + session.getId() + ": " + message);
 
-            if (!sessionService.isExist(session)){ // new user
-                String indexedName = sessionService.addSession(session, message.getUser());
-                message.setUser(indexedName);
-            }else {
-                message.setUser(sessionService.getSessionName(session));
-            }
-
-            messageString = mapper.writeValueAsString(message);
-
-            for (Session other: sessionService.getAllSessions()){
-                if (other.isOpen()){
-                    sendMessageToSession(other, messageString);
-                }
+            switch (message.getOperation()){
+                case Start :
+                    addSession(session, message, LOBBY);
+                    sendMessage(message, session);
+                    break;
+                case Message :
+                    sendMessage(message, session);
+                    break;
+                case Room :
+                    switchUserRoom(message, session);
+                    sendMessage(message, session);
+                    break;
+                case Exit :
+                    switchUserRoom(message, session);
+                    sendMessage(message, session);
+                    break;
             }
 
             daoService.saveData(session.getId(), message);
         }
+
     }
 
     /**
@@ -82,29 +85,14 @@ public class WebSocket {
      */
     @OnClose
     public void onClose(Session session){
-        String leftSessionName = sessionService.getSessionName(session);
-        sessionService.removeSession(session);
+        User user = sessionService.getSessionUser(session);
+        if (user != null){
+            String leftSessionName = user.getUser();
+            user = sessionService.removeSession(session);
 
-        Message message = new Message(leftSessionName, "Goodbye");
-        String jsonMessage = null;
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            jsonMessage = mapper.writeValueAsString(message);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            Message message = new Message(leftSessionName, GOODBYE, null);
+            sendToAll(message, user, false, true);
         }
-
-        if (jsonMessage != null){
-            for (Session other: sessionService.getAllSessions()){
-                if (other.isOpen()){
-                    sendMessageToSession(other, jsonMessage);
-                }else {
-                    // cleanup mechanism
-                    sessionService.removeSession(other);
-                }
-            }
-        }
-
 
         System.out.println("Session " +session.getId()+" has ended");
     }
@@ -115,5 +103,77 @@ public class WebSocket {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+
+    private void switchUserRoom(Message message, Session session) throws JsonProcessingException {
+        User user = sessionService.getSessionUser(session);
+        if (user != null){
+            user.setRoom(message.getText());
+            sessionService.updateSession(session, user);
+        }else {
+            addSession(session, message, message.getText()); // add the user
+            user = sessionService.getSessionUser(session);
+        }
+
+        message.setText("Joined to room:" + user.getRoom());
+    }
+
+    private Message addSession(Session session, Message message, String room){
+        User user = new User(message.getUser(), room);
+        String indexedName = sessionService.addSession(session, user);
+        message.setUser(indexedName);
+        return message;
+    }
+
+    private void sendMessage(Message message, Session session) throws JsonProcessingException {
+        message.setUser(sessionService.getSessionUser(session).getUser());
+
+        User user = sessionService.getSessionUser(session);
+        sendToAll(message, user, true, false);
+    }
+
+    /**
+     *
+     * @param message - message to be sent
+     * @param user - the user that send the message
+     * @param toSameRoom - true for sending to current room. False - for sending to all rooms
+     * @param toCleanup - For close session - if there is a non active session in the sessions service,
+     *                  we clear it from the sessions service
+     */
+    private void sendToAll(Message message, User user, boolean toSameRoom, boolean toCleanup) {
+        String jsonMessage = getJsonStringFromMessage(message);
+
+        if (jsonMessage != null){
+            for (Session other: sessionService.getAllSessions()){
+                User otherUser = sessionService.getSessionUser(other);
+                if (other.isOpen() && (toSameRoom && user.sameRoom(otherUser))){
+                    sendMessageToSession(other, jsonMessage);
+                } else if (toCleanup){
+                    // cleanup mechanism
+                    sessionService.removeSession(other);
+                }
+            }
+        }
+    }
+
+    private String getJsonStringFromMessage(Message message) {
+        String jsonMessage = null;
+
+        try {
+            jsonMessage = mapper.writeValueAsString(message);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+        return jsonMessage;
+    }
+
+    private synchronized Message getMessageFronJson(String messageString) {
+        Message message = null;
+        try {
+            message = mapper.readValue(messageString, Message.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return message;
     }
 }
